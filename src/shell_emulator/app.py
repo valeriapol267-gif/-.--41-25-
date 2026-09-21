@@ -16,7 +16,7 @@ entry = None
 def on_enter(event):
     line = entry.get()
     entry.delete(0, tk.END)
-    print_line("> " + line)
+    print_line("$ " + line)
     handle_line(line)
 
 
