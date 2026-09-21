@@ -43,15 +43,15 @@
 После запуска открывается окно с заголовком `Эмулятор - [vfs]`.
 Примеры ввода в строке команд:
 
-    > ls -la /home
+    $ ls -la /home
     ls -la /home
 
-    > cd projects
+    $ cd projects
     cd projects
 
-    > unknown_command foo
+    $ unknown_command foo
     Ошибка: неизвестная команда: unknown_command
 
-    > exit
+    $ exit
 
 После команды `exit` окно закрывается.
