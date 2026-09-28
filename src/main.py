@@ -5,8 +5,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from shell_emulator.app import main  # noqa: E402
-from shell_emulator.config import parse_args  # noqa: E402
+from shell_emulator.app import main  
+from shell_emulator.config import parse_args  
 
 if __name__ == "__main__":
     main(parse_args())
