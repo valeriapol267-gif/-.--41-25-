@@ -1,0 +1,4 @@
+ls
+cd projects
+ls -la /home
+exit
