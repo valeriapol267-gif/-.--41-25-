@@ -1,0 +1,5 @@
+ls
+cd projects
+vfs-info
+vfs-save vfs/saved_output.csv
+foo bar
