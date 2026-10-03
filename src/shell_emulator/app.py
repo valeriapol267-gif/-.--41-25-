@@ -3,8 +3,10 @@
 import tkinter as tk
 from tkinter import scrolledtext
 
-from shell_emulator.commands import CommandError, ExitCommand, execute
+from shell_emulator.commands import CommandError, ExitCommand, execute, \
+    set_vfs
 from shell_emulator.parser import parse_line
+from shell_emulator.vfs import VfsError, load_vfs
 
 VFS_NAME = "vfs"
 SCRIPT_DELAY_MS = 100
@@ -57,6 +59,22 @@ def show_params(args):
     print_line("[debug] script = " + script)
 
 
+def load_vfs_from_args(args):
+    """Загрузить VFS, если путь указан в параметрах запуска."""
+    if args.vfs == "":
+        return
+
+    try:
+        loaded = load_vfs(args.vfs)
+    except VfsError as error:
+        print_line("Ошибка загрузки VFS: " + str(error))
+        return
+
+    set_vfs(loaded)
+    print_line("[debug] VFS загружена: имя=" + loaded.name)
+    print_line("[debug] VFS sha256=" + loaded.info_hash())
+
+
 def run_script(path):
     """Выполнить стартовый скрипт: показать ввод и вывод строк."""
     try:
@@ -74,7 +92,7 @@ def run_script(path):
 
 
 def main(args):
-    """Создать окно, показать параметры и запустить программу."""
+    """Создать окно, загрузить VFS и запустить программу."""
     global root, output, entry
 
     root = tk.Tk()
@@ -91,6 +109,8 @@ def main(args):
     entry.focus_set()
 
     show_params(args)
+    load_vfs_from_args(args)
+
     if args.script != "":
         root.after(SCRIPT_DELAY_MS, run_script, args.script)
 
