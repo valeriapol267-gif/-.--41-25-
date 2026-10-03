@@ -1,12 +1,23 @@
-"""Команды-заглушки эмулятора: ls, cd и exit."""
+"""Команды эмулятора: ls, cd, exit, vfs-info, vfs-save."""
+
+from shell_emulator.vfs import VfsError, save_vfs
 
 
 class CommandError(Exception):
-    """Ошибка выполнения команды: команда не найдена."""
+    """Ошибка выполнения команды: команда не найдена или не удалась."""
 
 
 class ExitCommand(Exception):
     """Сигнал о том, что пользователь хочет выйти из программы."""
+
+
+CURRENT_VFS = None
+
+
+def set_vfs(vfs):
+    """Запомнить загруженную VFS для команд vfs-info и vfs-save."""
+    global CURRENT_VFS
+    CURRENT_VFS = vfs
 
 
 def cmd_ls(args):
@@ -24,6 +35,30 @@ def cmd_exit(args):
     raise ExitCommand()
 
 
+def cmd_vfs_info(args):
+    """Команда vfs-info: имя VFS и хеш SHA-256 её данных."""
+    if CURRENT_VFS is None:
+        raise CommandError("VFS не загружена")
+    return "vfs-info: имя=" + CURRENT_VFS.name + \
+        " sha256=" + CURRENT_VFS.info_hash()
+
+
+def cmd_vfs_save(args):
+    """Команда vfs-save путь: сохранить VFS в CSV по указанному пути."""
+    if CURRENT_VFS is None:
+        raise CommandError("VFS не загружена")
+
+    if len(args) == 0:
+        raise CommandError("vfs-save требует путь для сохранения")
+
+    try:
+        save_vfs(CURRENT_VFS, args[0])
+    except VfsError as error:
+        raise CommandError(str(error))
+
+    return "vfs-save: сохранено в " + args[0]
+
+
 def format_call(name, args):
     """Собрать строку вида 'имя аргумент1 аргумент2'."""
     if len(args) == 0:
@@ -35,6 +70,8 @@ COMMANDS = {
     "ls": cmd_ls,
     "cd": cmd_cd,
     "exit": cmd_exit,
+    "vfs-info": cmd_vfs_info,
+    "vfs-save": cmd_vfs_save,
 }
 
 
