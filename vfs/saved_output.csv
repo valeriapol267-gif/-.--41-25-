@@ -1,0 +1,9 @@
+path,type,content
+/,dir,
+/data,dir,
+/data/raw,dir,
+/data/raw/sample.bin,file,YmluYXJ5LWxpa2UtZGF0YS0xMjM=
+/docs,dir,
+/docs/projects,dir,
+/docs/projects/2024,dir,
+/docs/projects/2024/report.txt,file,0J7RgtGH0ZHRgiDQt9CwIDIwMjQg0LPQvtC0Lg==
