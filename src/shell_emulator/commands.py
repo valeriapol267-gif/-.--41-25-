@@ -11,13 +11,13 @@ class ExitCommand(Exception):
     """Сигнал о том, что пользователь хочет выйти из программы."""
 
 
-CURRENT_VFS = None
+current_vfs = None
 
 
 def set_vfs(vfs):
     """Запомнить загруженную VFS для команд vfs-info и vfs-save."""
-    global CURRENT_VFS
-    CURRENT_VFS = vfs
+    global current_vfs
+    current_vfs = vfs
 
 
 def cmd_ls(args):
@@ -37,22 +37,22 @@ def cmd_exit(args):
 
 def cmd_vfs_info(args):
     """Команда vfs-info: имя VFS и хеш SHA-256 её данных."""
-    if CURRENT_VFS is None:
+    if current_vfs is None:
         raise CommandError("VFS не загружена")
-    return "vfs-info: имя=" + CURRENT_VFS.name + \
-        " sha256=" + CURRENT_VFS.info_hash()
+    return "vfs-info: имя=" + current_vfs.name + \
+        " sha256=" + current_vfs.info_hash()
 
 
 def cmd_vfs_save(args):
     """Команда vfs-save путь: сохранить VFS в CSV по указанному пути."""
-    if CURRENT_VFS is None:
+    if current_vfs is None:
         raise CommandError("VFS не загружена")
 
     if len(args) == 0:
         raise CommandError("vfs-save требует путь для сохранения")
 
     try:
-        save_vfs(CURRENT_VFS, args[0])
+        save_vfs(current_vfs, args[0])
     except VfsError as error:
         raise CommandError(str(error))
 
