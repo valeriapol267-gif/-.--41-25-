@@ -32,7 +32,10 @@ def handle_line(line, where=""):
         return False
 
     try:
-        print_line(execute(command, args))
+        result = execute(command, args)
+        if result != "":
+            print_line(result)
+            
     except ExitCommand:
         root.quit()
         return True
