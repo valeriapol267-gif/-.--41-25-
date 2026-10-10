@@ -1,4 +1,4 @@
-"""Команды эмулятора: ls, cd, who, tail, cat, exit, vfs-info, vfs-save."""
+"""Команды эмулятора: ls, cd, who, tail, cat, rmdir, mv и служебные."""
 
 import getpass
 from datetime import datetime
@@ -7,7 +7,11 @@ from shell_emulator.vfs import (
     VfsError,
     is_dir,
     is_file,
+    join_path,
     list_dir,
+    move_node,
+    parent_path,
+    remove_node,
     resolve_path,
     save_vfs,
 )
@@ -120,6 +124,35 @@ def cmd_tail(args):
     return "\n".join(lines[start:])
 
 
+def cmd_rmdir(args):
+    """Команда rmdir папка...: удалить пустые папки VFS."""
+    vfs = need_vfs()
+    if len(args) == 0:
+        raise CommandError("rmdir: не указана папка")
+
+    for name in args:
+        remove_empty_dir(vfs, name)
+    return ""
+
+
+def cmd_mv(args):
+    """Команда mv источник назначение: переместить или переименовать."""
+    vfs = need_vfs()
+    if len(args) != 2:
+        raise CommandError("mv: нужно указать источник и назначение")
+
+    src = resolve_path(current_dir, args[0])
+    check_move_source(vfs, src, args[0])
+
+    dst = resolve_path(current_dir, args[1])
+    target = find_move_target(vfs, src, dst, args[1])
+
+    if is_file(vfs, target):
+        remove_node(vfs, target)
+    move_node(vfs, src, target)
+    return ""
+
+
 def cmd_exit(args):
     """Команда exit. Останавливает работу эмулятора."""
     raise ExitCommand()
@@ -157,6 +190,56 @@ def parse_count(text):
     return count
 
 
+def remove_empty_dir(vfs, arg):
+    """Удалить одну пустую папку или сообщить, почему нельзя."""
+    path = resolve_path(current_dir, arg)
+
+    if path == "/":
+        raise CommandError("rmdir: нельзя удалить корневой каталог")
+    if is_file(vfs, path):
+        raise CommandError("rmdir: " + arg + ": не каталог")
+    if not is_dir(vfs, path):
+        raise CommandError("rmdir: " + arg + ": нет такого каталога")
+    if current_dir == path or current_dir.startswith(path + "/"):
+        raise CommandError("rmdir: нельзя удалить текущий каталог")
+    if len(list_dir(vfs, path)) > 0:
+        raise CommandError("rmdir: " + arg + ": каталог не пуст")
+
+    remove_node(vfs, path)
+
+
+def check_move_source(vfs, src, arg):
+    """Проверить, что источник для mv существует и его можно двигать."""
+    if src == "/":
+        raise CommandError("mv: нельзя переместить корневой каталог")
+    if not is_dir(vfs, src) and not is_file(vfs, src):
+        raise CommandError("mv: нет такого файла или каталога: " + arg)
+    if current_dir == src or current_dir.startswith(src + "/"):
+        raise CommandError("mv: нельзя переместить текущий каталог")
+
+
+def find_move_target(vfs, src, dst, arg):
+    """Вычислить итоговый путь для mv и проверить, что он допустим.
+
+    Если dst - существующая папка, источник кладётся внутрь неё.
+    """
+    target = dst
+    if is_dir(vfs, dst):
+        target = join_path(dst, src.split("/")[-1])
+
+    if target == src:
+        raise CommandError("mv: источник и назначение совпадают")
+    if is_dir(vfs, src) and target.startswith(src + "/"):
+        raise CommandError("mv: нельзя переместить каталог в самого себя")
+    if not is_dir(vfs, parent_path(target)):
+        raise CommandError("mv: нет такого каталога: " + arg)
+    if is_dir(vfs, target):
+        raise CommandError("mv: не удалось заменить каталог: " + arg)
+    if is_file(vfs, target) and is_dir(vfs, src):
+        raise CommandError("mv: нельзя заменить файл каталогом: " + arg)
+    return target
+
+
 def read_text(path_arg, command):
     """Прочитать файл VFS как текст.
 
@@ -182,6 +265,8 @@ COMMANDS = {
     "who": cmd_who,
     "cat": cmd_cat,
     "tail": cmd_tail,
+    "rmdir": cmd_rmdir,
+    "mv": cmd_mv,
     "exit": cmd_exit,
     "vfs-info": cmd_vfs_info,
     "vfs-save": cmd_vfs_save,
