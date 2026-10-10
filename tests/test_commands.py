@@ -88,7 +88,57 @@ def test_tail_errors():
     for args in bad:
         with pytest.raises(CommandError):
             execute("tail", args)
+def test_rmdir_removes_empty_dir():
+    """rmdir удаляет пустую папку из памяти VFS."""
+    execute("mv", ["a.txt", "docs"])
+    execute("mv", ["docs/b.txt", "/"])
+    execute("mv", ["docs/a.txt", "/"])
+    execute("rmdir", ["docs"])
+    assert "docs" not in execute("ls", [])
 
+
+def test_rmdir_errors():
+    """rmdir сообщает об ошибках: папка не пуста, файл, нет папки."""
+    for args in ([], ["nope"], ["a.txt"], ["docs"], ["/"]):
+        with pytest.raises(CommandError):
+            execute("rmdir", args)
+
+
+def test_mv_renames_file():
+    """mv переименовывает файл."""
+    execute("mv", ["a.txt", "c.txt"])
+    assert execute("ls", []) == "c.txt\ndocs\nlog.txt"
+
+
+def test_mv_moves_into_dir_and_overwrites():
+    """mv кладёт файл в папку и заменяет существующий файл."""
+    execute("mv", ["a.txt", "docs"])
+    assert execute("ls", ["docs"]) == "a.txt\nb.txt"
+    execute("mv", ["log.txt", "docs/b.txt"])
+    assert execute("cat", ["docs/b.txt"]).startswith("строка 1")
+
+
+def test_mv_moves_directory_with_content():
+    """mv переносит папку вместе с содержимым."""
+    execute("mv", ["docs", "moved"])
+    assert execute("cat", ["moved/b.txt"]) == "bbb"
+
+
+def test_mv_errors():
+    """mv сообщает об ошибках в аргументах и путях."""
+    bad = ([], ["a.txt"], ["a.txt", "b", "c"], ["nope", "x"], ["/", "x"],
+           ["a.txt", "a.txt"], ["a.txt", "nowhere/x"], ["docs", "a.txt"],
+           ["docs", "docs/in"])
+    for args in bad:
+        with pytest.raises(CommandError):
+            execute("mv", args)
+
+
+def test_hash_changes_after_change():
+    """После mv хеш в vfs-info меняется."""
+    before = execute("vfs-info", [])
+    execute("mv", ["a.txt", "c.txt"])
+    assert execute("vfs-info", []) != before
 
 def test_who_prints_user():
     """who выводит имя пользователя и не принимает аргументов."""
