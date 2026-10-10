@@ -1,0 +1,46 @@
+ls
+vfs-info
+rmdir empty1
+ls
+rmdir empty2 empty3
+ls
+mv readme.txt hello.txt
+ls
+mv hello.txt box
+ls box
+mv box/hello.txt /readme.txt
+ls
+mv notes.txt docs/guide.txt
+cat docs/guide.txt
+mv docs archive
+ls
+mv archive box
+ls box
+cd box/archive
+mv sub ..
+ls
+ls ..
+cd /
+ls box
+vfs-info
+vfs-save vfs/after_stage5.csv
+rmdir
+rmdir missing
+rmdir readme.txt
+rmdir box
+rmdir /
+cd box
+rmdir .
+cd /
+mv
+mv readme.txt
+mv readme.txt box box2
+mv missing.txt box
+mv / box
+mv readme.txt readme.txt
+mv readme.txt nowhere/new.txt
+mv box readme.txt
+mv box box/inside
+cd box
+mv /box x
+cd /
