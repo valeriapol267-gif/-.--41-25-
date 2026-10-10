@@ -29,8 +29,13 @@ class Vfs:
         self.raw_bytes = raw_bytes
 
     def info_hash(self):
-        """Вернуть SHA-256 хеш исходных данных VFS в виде строки."""
-        return hashlib.sha256(self.raw_bytes).hexdigest()
+        """Вернуть SHA-256 хеш текущих данных VFS в виде строки.
+
+        Хеш считается по тому тексту CSV, который записал бы
+        vfs-save, поэтому после mv и rmdir он меняется.
+        """
+        data = serialize_vfs(self).encode("utf-8")
+        return hashlib.sha256(data).hexdigest()
 
 
 REQUIRED_COLUMNS = {"path", "type", "content"}
@@ -102,8 +107,8 @@ def _name_from_path(path):
     return path.replace("\\", "/").split("/")[-1]
 
 
-def save_vfs(vfs, path):
-    """Сохранить VFS в CSV-файл в исходном формате."""
+def serialize_vfs(vfs):
+    """Превратить VFS в текст CSV со столбцами path,type,content."""
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["path", "type", "content"])
@@ -116,13 +121,16 @@ def save_vfs(vfs, path):
             content = base64.b64encode(node.content_bytes).decode("ascii")
             writer.writerow([node_path, "file", content])
 
+    return output.getvalue()
+
+
+def save_vfs(vfs, path):
+    """Сохранить VFS в CSV-файл в исходном формате."""
     try:
         with open(path, "w", encoding="utf-8", newline="") as file:
-            file.write(output.getvalue())
+            file.write(serialize_vfs(vfs))
     except OSError as error:
         raise VfsError("не удалось сохранить VFS: " + str(error))
-
-
 
 
 def resolve_path(current, path):
@@ -182,3 +190,32 @@ def list_dir(vfs, path):
             names.add(rest.split("/")[0])
 
     return sorted(names)
+
+
+def parent_path(path):
+    """Вернуть путь папки, в которой лежит path."""
+    parent = path.rsplit("/", 1)[0]
+    if parent == "":
+        return "/"
+    return parent
+
+
+def join_path(folder, name):
+    """Склеить путь папки и имя внутри неё."""
+    if folder == "/":
+        return "/" + name
+    return folder + "/" + name
+
+
+def remove_node(vfs, path):
+    """Удалить из памяти узел VFS (файл или пустую папку)."""
+    del vfs.nodes[path]
+
+
+def move_node(vfs, src, dst):
+    """Переместить узел VFS и всё, что лежит внутри него, на новый путь."""
+    for node_path in list(vfs.nodes):
+        if node_path == src or node_path.startswith(src + "/"):
+            node = vfs.nodes.pop(node_path)
+            node.path = dst + node_path[len(src):]
+            vfs.nodes[node.path] = node
