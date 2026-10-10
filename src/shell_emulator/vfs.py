@@ -121,3 +121,64 @@ def save_vfs(vfs, path):
             file.write(output.getvalue())
     except OSError as error:
         raise VfsError("не удалось сохранить VFS: " + str(error))
+
+
+
+
+def resolve_path(current, path):
+    """Превратить путь (абсолютный или относительный) в полный.
+
+    Понимает "." (текущая папка) и ".." (папка выше).
+    Выше корня "/" подняться нельзя.
+    """
+    if path.startswith("/"):
+        parts = path.split("/")
+    else:
+        parts = current.split("/") + path.split("/")
+
+    result = []
+    for part in parts:
+        if part == "" or part == ".":
+            continue
+        if part == "..":
+            if len(result) > 0:
+                result.pop()
+        else:
+            result.append(part)
+
+    return "/" + "/".join(result)
+
+
+def is_dir(vfs, path):
+    """Проверить, что по этому пути в VFS находится папка."""
+    if path == "/":
+        return True
+
+    node = vfs.nodes.get(path)
+    if node is not None:
+        return node.is_dir
+
+    prefix = path + "/"
+    for node_path in vfs.nodes:
+        if node_path.startswith(prefix):
+            return True
+    return False
+
+
+def is_file(vfs, path):
+    """Проверить, что по этому пути в VFS находится файл."""
+    node = vfs.nodes.get(path)
+    return node is not None and not node.is_dir
+
+
+def list_dir(vfs, path):
+    """Вернуть отсортированный список имён внутри папки."""
+    prefix = path.rstrip("/") + "/"
+    names = set()
+
+    for node_path in vfs.nodes:
+        if node_path != "/" and node_path.startswith(prefix):
+            rest = node_path[len(prefix):]
+            names.add(rest.split("/")[0])
+
+    return sorted(names)
