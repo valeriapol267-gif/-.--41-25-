@@ -1,0 +1,38 @@
+who
+ls
+ls docs
+ls /docs/projects/2024
+ls empty
+ls readme.txt
+cd docs
+ls
+cd projects/2024
+ls
+cd ..
+ls
+cd /
+cd
+cat readme.txt
+cat docs/notes.txt readme.txt
+tail logs/app.log
+tail -n 3 logs/app.log
+tail -n 0 logs/app.log
+cd logs
+tail app.log
+cd /
+ls missing
+ls docs logs
+cd missing
+cd readme.txt
+cd docs logs
+cat missing.txt
+cat docs
+cat
+tail
+tail -n
+tail -n abc logs/app.log
+tail -n -2 logs/app.log
+tail -n 2 missing.txt
+tail logs
+tail logs/app.log readme.txt
+who now
