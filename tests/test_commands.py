@@ -7,14 +7,14 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from shell_emulator import commands  # noqa: E402
-from shell_emulator.commands import (  # noqa: E402
+from shell_emulator import commands  
+from shell_emulator.commands import (  
     CommandError,
     ExitCommand,
     execute,
     set_vfs,
 )
-from shell_emulator.vfs import Vfs, VfsNode  # noqa: E402
+from shell_emulator.vfs import Vfs, VfsNode  
 
 
 def make_vfs():
