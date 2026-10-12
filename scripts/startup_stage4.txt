@@ -36,3 +36,21 @@ tail -n 2 missing.txt
 tail logs
 tail logs/app.log readme.txt
 who now
+ls -l
+ls -a
+ls -la
+ls -lh
+ls -l -h -a /
+ls -h docs
+ls -l docs/projects
+ls -x
+cd docs/projects/2024/../../../logs
+ls
+cd /
+cd docs/./projects/../projects/./2024
+ls
+cd /
+cd docs/date/../../logs/././app
+cd docs/missing/../projects
+cd readme.txt/..
+ls docs/date/../logs
