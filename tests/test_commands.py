@@ -164,3 +164,46 @@ def test_execute_exit_raises_exit_command():
     """Команда exit вызывает ExitCommand."""
     with pytest.raises(ExitCommand):
         execute("exit", [])
+
+def test_cd_checks_every_part_of_path():
+    """cd проверяет каждую часть пути, как настоящая оболочка."""
+    with pytest.raises(CommandError):
+        execute("cd", ["docs/date/../../docs"])
+    assert commands.current_dir == "/"
+    execute("cd", ["docs/./../docs/././"])
+    assert commands.current_dir == "/docs"
+
+
+def test_path_through_file_is_error():
+    """Путь через файл (a.txt/..) считается ошибкой."""
+    with pytest.raises(CommandError):
+        execute("cd", ["a.txt/.."])
+
+
+def test_ls_hidden_files():
+    """Скрытые файлы видны только с -a, вместе с . и .."""
+    execute("mv", ["a.txt", ".hid"])
+    assert execute("ls", []) == "docs\nlog.txt"
+    assert execute("ls", ["-a"]) == ".\n..\n.hid\ndocs\nlog.txt"
+
+
+def test_ls_long_and_human():
+    """ls -l показывает тип и размер, -h делает размер читаемым."""
+    lines = execute("ls", ["-l"]).split("\n")
+    assert lines[0] == "-   16 a.txt"
+    assert lines[1] == "d 4096 docs"
+    assert "d 4.0K docs" in execute("ls", ["-lh"])
+    assert "4.0K" not in execute("ls", ["-l"])
+
+
+def test_ls_options_in_any_form():
+    """Опции можно писать слитно, раздельно и вместе с путём."""
+    first = execute("ls", ["-lah", "/"])
+    assert first == execute("ls", ["-l", "-h", "-a"])
+    assert first == execute("ls", ["-a", "-lh", "/"])
+
+
+def test_ls_unknown_option():
+    """Неизвестная опция ls даёт ошибку."""
+    with pytest.raises(CommandError):
+        execute("ls", ["-x"])

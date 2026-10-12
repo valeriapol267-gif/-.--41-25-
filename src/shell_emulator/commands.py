@@ -18,6 +18,9 @@ from shell_emulator.vfs import (
 
 DEFAULT_TAIL_LINES = 10
 MV_ARGS_COUNT = 2
+KILO = 1024
+DIR_SIZE = 4096
+LS_LETTERS = "lha"
 LOGIN_TIME = datetime.now().strftime("%Y-%m-%d %H:%M")
 
 current_vfs = None
@@ -54,21 +57,95 @@ def resolve(vfs, arg, command):
         raise CommandError(command + ": " + str(error))
 
 
+def parse_ls_args(args):
+    """Разделить аргументы ls на буквы опций и пути."""
+    letters = ""
+    paths = []
+    for arg in args:
+        if arg.startswith("-") and len(arg) > 1:
+            for letter in arg[1:]:
+                if letter not in LS_LETTERS:
+                    raise CommandError("ls: неизвестная опция: -" + letter)
+                letters += letter
+        else:
+            paths.append(arg)
+    return letters, paths
+
+
+def entry_size(vfs, path):
+    """Размер узла в байтах (для папки условно 4096)."""
+    if is_dir(vfs, path):
+        return DIR_SIZE
+    return len(vfs.nodes[path].content_bytes)
+
+
+def format_size(size, human):
+    """Записать размер числом или в виде 4.0K, 1.5M (для опции -h)."""
+    if not human:
+        return str(size)
+    value = float(size)
+    for unit in ["", "K", "M", "G"]:
+        if value < KILO or unit == "G":
+            if unit == "":
+                return str(size)
+            return "%.1f%s" % (value, unit)
+        value = value / KILO
+
+
+def make_entries(vfs, target, show_all):
+    """Собрать список (имя, путь) для вывода ls."""
+    if is_file(vfs, target):
+        return [(target.split("/")[-1], target)]
+
+    entries = []
+    if show_all:
+        entries.append((".", target))
+        entries.append(("..", parent_path(target)))
+    for name in list_dir(vfs, target):
+        if show_all or not name.startswith("."):
+            entries.append((name, join_path(target, name)))
+    return entries
+
+
+def format_entries(vfs, entries, letters):
+    """Собрать текст ответа ls: короткий список или подробный (-l)."""
+    if len(entries) == 0:
+        return ""
+    if "l" not in letters:
+        return "\n".join(name for name, path in entries)
+
+    sizes = []
+    for name, path in entries:
+        sizes.append(format_size(entry_size(vfs, path), "h" in letters))
+    width = max(len(text) for text in sizes)
+
+    lines = []
+    for i in range(len(entries)):
+        name, path = entries[i]
+        kind = "d" if is_dir(vfs, path) else "-"
+        lines.append(kind + " " + sizes[i].rjust(width) + " " + name)
+    return "\n".join(lines)
+
+
 def cmd_ls(args):
-    """Команда ls [путь]: показать содержимое папки VFS."""
+    """Команда ls [-l] [-h] [-a] [путь]: содержимое папки VFS.
+
+    -a показывает скрытые файлы, . и ..; -l выводит тип и размер;
+    -h делает размеры читаемыми. Опции можно писать слитно (-lah).
+    """
     vfs = need_vfs()
-    if len(args) > 1:
+    letters, paths = parse_ls_args(args)
+    if len(paths) > 1:
         raise CommandError("ls: слишком много аргументов")
 
     target = current_dir
-    if len(args) == 1:
-        target = resolve(vfs, args[0], "ls")
+    if len(paths) == 1:
+        target = resolve(vfs, paths[0], "ls")
+    if not is_dir(vfs, target) and not is_file(vfs, target):
+        raise CommandError("ls: нет такого файла или каталога: " + paths[0])
 
-    if is_dir(vfs, target):
-        return "\n".join(list_dir(vfs, target))
-    if is_file(vfs, target):
-        return target.split("/")[-1]
-    raise CommandError("ls: нет такого файла или каталога: " + args[0])
+    entries = make_entries(vfs, target, "a" in letters)
+    return format_entries(vfs, entries, letters)
 
 
 def cmd_cd(args):
