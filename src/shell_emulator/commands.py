@@ -17,6 +17,7 @@ from shell_emulator.vfs import (
 )
 
 DEFAULT_TAIL_LINES = 10
+MV_ARGS_COUNT = 2
 LOGIN_TIME = datetime.now().strftime("%Y-%m-%d %H:%M")
 
 current_vfs = None
@@ -109,7 +110,7 @@ def cmd_tail(args):
     """
     count = DEFAULT_TAIL_LINES
     if len(args) >= 1 and args[0] == "-n":
-        if len(args) < 2:
+        if len(args) == 1:
             raise CommandError("tail: после -n нужно число строк")
         count = parse_count(args[1])
         args = args[2:]
@@ -138,7 +139,7 @@ def cmd_rmdir(args):
 def cmd_mv(args):
     """Команда mv источник назначение: переместить или переименовать."""
     vfs = need_vfs()
-    if len(args) != 2:
+    if len(args) != MV_ARGS_COUNT:
         raise CommandError("mv: нужно указать источник и назначение")
 
     src = resolve_path(current_dir, args[0])
