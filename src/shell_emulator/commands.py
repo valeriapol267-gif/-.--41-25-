@@ -46,6 +46,14 @@ def need_vfs():
     return current_vfs
 
 
+def resolve(vfs, arg, command):
+    """Полный путь для аргумента команды или CommandError."""
+    try:
+        return resolve_path(vfs, current_dir, arg)
+    except VfsError as error:
+        raise CommandError(command + ": " + str(error))
+
+
 def cmd_ls(args):
     """Команда ls [путь]: показать содержимое папки VFS."""
     vfs = need_vfs()
@@ -54,7 +62,7 @@ def cmd_ls(args):
 
     target = current_dir
     if len(args) == 1:
-        target = resolve_path(current_dir, args[0])
+        target = resolve(vfs, args[0], "ls")
 
     if is_dir(vfs, target):
         return "\n".join(list_dir(vfs, target))
@@ -74,7 +82,7 @@ def cmd_cd(args):
         current_dir = "/"
         return ""
 
-    target = resolve_path(current_dir, args[0])
+    target = resolve(vfs, args[0], "cd")
     if is_file(vfs, target):
         raise CommandError("cd: не каталог: " + args[0])
     if not is_dir(vfs, target):
@@ -142,10 +150,10 @@ def cmd_mv(args):
     if len(args) != MV_ARGS_COUNT:
         raise CommandError("mv: нужно указать источник и назначение")
 
-    src = resolve_path(current_dir, args[0])
+    src = resolve(vfs, args[0], "mv")
     check_move_source(vfs, src, args[0])
 
-    dst = resolve_path(current_dir, args[1])
+    dst = resolve(vfs, args[1], "mv")
     target = find_move_target(vfs, src, dst, args[1])
 
     if is_file(vfs, target):
@@ -193,7 +201,7 @@ def parse_count(text):
 
 def remove_empty_dir(vfs, arg):
     """Удалить одну пустую папку или сообщить, почему нельзя."""
-    path = resolve_path(current_dir, arg)
+    path = resolve(vfs, arg, "rmdir")
 
     if path == "/":
         raise CommandError("rmdir: нельзя удалить корневой каталог")
@@ -247,7 +255,7 @@ def read_text(path_arg, command):
     command - имя команды для сообщений об ошибках.
     """
     vfs = need_vfs()
-    path = resolve_path(current_dir, path_arg)
+    path = resolve(vfs, path_arg, command)
 
     if is_dir(vfs, path):
         raise CommandError(command + ": " + path_arg + ": это каталог")

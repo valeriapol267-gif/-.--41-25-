@@ -133,29 +133,30 @@ def save_vfs(vfs, path):
         raise VfsError("не удалось сохранить VFS: " + str(error))
 
 
-def resolve_path(current, path):
+def resolve_path(vfs, current, path):
     """Превратить путь (абсолютный или относительный) в полный.
 
-    Понимает "." (текущая папка) и ".." (папка выше).
+    Понимает "." (текущая папка) и ".." (папка выше). Как в настоящей
+    оболочке, каждая пройденная папка должна существовать, иначе
+    возникает VfsError, даже если дальше путь возвращается через "..".
     Выше корня "/" подняться нельзя.
     """
+    full = current
     if path.startswith("/"):
-        parts = path.split("/")
-    else:
-        parts = current.split("/") + path.split("/")
+        full = "/"
 
-    result = []
-    for part in parts:
+    for part in path.split("/"):
         if part == "" or part == ".":
             continue
+        if not is_dir(vfs, full):
+            reason = "не каталог: " if is_file(vfs, full) else (
+                "нет такого каталога: ")
+            raise VfsError(reason + full)
         if part == "..":
-            if len(result) > 0:
-                result.pop()
+            full = parent_path(full)
         else:
-            result.append(part)
-
-    return "/" + "/".join(result)
-
+            full = join_path(full, part)
+    return full
 
 def is_dir(vfs, path):
     """Проверить, что по этому пути в VFS находится папка."""
