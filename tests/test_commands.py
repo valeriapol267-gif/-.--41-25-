@@ -1,20 +1,16 @@
 """Тесты модуля shell_emulator.commands."""
 
-import sys
-from pathlib import Path
-
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-
-from shell_emulator import commands  
-from shell_emulator.commands import (  
+from shell_emulator import commands
+from shell_emulator.commands import (
+    DEFAULT_TAIL_LINES,
     CommandError,
     ExitCommand,
     execute,
     set_vfs,
 )
-from shell_emulator.vfs import Vfs, VfsNode  
+from shell_emulator.vfs import Vfs, VfsNode
 
 
 def make_vfs():
@@ -76,8 +72,9 @@ def test_cat_errors():
 
 
 def test_tail_default_and_n():
-    """tail выводит 10 строк по умолчанию и N строк с ключом -n."""
-    assert len(execute("tail", ["log.txt"]).splitlines()) == 10
+    """tail выводит стандартное число строк и N строк с ключом -n."""
+    lines = execute("tail", ["log.txt"]).splitlines()
+    assert len(lines) == DEFAULT_TAIL_LINES
     assert execute("tail", ["-n", "2", "log.txt"]) == "строка 11\nстрока 12"
 
 
