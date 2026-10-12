@@ -1,11 +1,6 @@
 """Тесты модуля shell_emulator.parser."""
 
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-
-from shell_emulator.parser import parse_line  
+from shell_emulator.parser import parse_line
 
 
 def test_parse_simple_command():
